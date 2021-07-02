@@ -13,15 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define CERB_SIZE (4*(1024+16))
+
 typedef struct {
 	uint32_t in;
 	uint32_t out;
 	uint8_t* buf;
 	size_t n;
 } cerb_t;
-
-// init
-void cerb_init();
 
 // allocate memory in _cerb_hm
 void* cerb_malloc(size_t n);

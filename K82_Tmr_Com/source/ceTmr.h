@@ -1,8 +1,8 @@
 // Description: Simple software timer
-// File: ceTmr.h
+// File: ceTmr.c
 // Author: Yan Naing Aye
-// Last modified: 2021-06-30
-// Reference: http://cool-emerald.blogspot.com/2010/06/soft-timer-module-for-8051.html
+// References:
+//    http://cool-emerald.blogspot.com/2010/06/soft-timer-module-for-8051.html
 
 #ifndef CE_TMR_H
 #define CE_TMR_H

@@ -6,15 +6,8 @@
  */
 #include "ceRingBuf.h"
 
-#define CERB_SIZE 1024 // heap memory size for CE RB
 uint8_t _cerb_hm[CERB_SIZE]; // heap memory
-void* _cerb_sp; // stack pointer
-//-----------------------------------------------------------------------------
-// init
-void cerb_init()
-{
-	_cerb_sp = _cerb_hm + CERB_SIZE;
-}
+void* _cerb_sp = (_cerb_hm + CERB_SIZE); // stack pointer
 //-----------------------------------------------------------------------------
 // allocate memory in _cerb_hm
 void* cerb_malloc(size_t n)
