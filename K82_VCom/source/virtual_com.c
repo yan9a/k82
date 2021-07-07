@@ -41,7 +41,7 @@ extern uint8_t USB_EnterLowpowerMode(void);
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
+#define WEAK __attribute__ ((weak))
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -111,6 +111,13 @@ static usb_device_class_config_list_struct_t s_cdcAcmConfigList = {
 volatile static uint8_t s_waitForDataReceive = 0;
 volatile static uint8_t s_comOpen            = 0;
 #endif
+
+// ring buffer
+#define USB_VCOM_RB_SIZE 1024
+cerb_t* rRB_VC;
+cerb_t* tRB_VC;
+bool _bUSBToTx = false;
+bool _bUSBToRx = false;
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -183,7 +190,9 @@ usb_status_t USB_DeviceCdcVcomCallback(class_handle_t handle, uint32_t event, vo
                 {
                     /* User: add your own code for send complete event */
                     /* Schedule buffer for next receive event */
-                    error = USB_DeviceCdcAcmRecv(handle, USB_CDC_VCOM_BULK_OUT_ENDPOINT, s_currRecvBuf,
+                	if(_bUSBToRx){
+                		_bUSBToRx = false;
+                		error = USB_DeviceCdcAcmRecv(handle, USB_CDC_VCOM_BULK_OUT_ENDPOINT, s_currRecvBuf,
                                                  g_UsbDeviceCdcVcomDicEndpoints[0].maxPacketSize);
 #if defined(FSL_FEATURE_USB_KHCI_KEEP_ALIVE_ENABLED) && (FSL_FEATURE_USB_KHCI_KEEP_ALIVE_ENABLED > 0U) && \
     defined(USB_DEVICE_CONFIG_KEEP_ALIVE_MODE) && (USB_DEVICE_CONFIG_KEEP_ALIVE_MODE > 0U) &&             \
@@ -191,6 +200,7 @@ usb_status_t USB_DeviceCdcVcomCallback(class_handle_t handle, uint32_t event, vo
                     s_waitForDataReceive = 1;
                     USB0->INTEN &= ~USB_INTEN_SOFTOKEN_MASK;
 #endif
+                	}
                 }
             }
             else
@@ -497,6 +507,10 @@ usb_status_t USB_DeviceCallback(usb_device_handle handle, uint32_t event, void *
  */
 void APPInit(void)
 {
+	// create ring buffer
+	rRB_VC = cerb_Create(USB_VCOM_RB_SIZE);
+	tRB_VC = cerb_Create(USB_VCOM_RB_SIZE);
+
     USB_DeviceClockInit();
 #if (defined(FSL_FEATURE_SOC_SYSMPU_COUNT) && (FSL_FEATURE_SOC_SYSMPU_COUNT > 0U))
     SYSMPU_Enable(SYSMPU, 0);
@@ -544,22 +558,40 @@ void APPTask(void)
             /* Copy Buffer to Send Buff */
             for (i = 0; i < s_recvSize; i++)
             {
-                s_currSendBuf[s_sendSize++] = s_currRecvBuf[i];
+                // s_currSendBuf[s_sendSize++] = s_currRecvBuf[i];
+            	cerb_Push(rRB_VC,s_currRecvBuf[i]);
             }
             s_recvSize = 0;
+            _bUSBToTx = true;
+            _bUSBToRx = true;
         }
 
-        if (s_sendSize)
+        VComTask();
+
+        // if (s_sendSize)
+        if (!cerb_IsEmpty(tRB_VC))
         {
+        	_bUSBToTx = false;
             uint32_t size = s_sendSize;
             s_sendSize    = 0;
-
+            size = 0;
+            while(!cerb_IsEmpty(tRB_VC)) {
+				s_currSendBuf[size++] =cerb_Pop(tRB_VC);
+			}
             error = USB_DeviceCdcAcmSend(s_cdcVcom.cdcAcmHandle, USB_CDC_VCOM_BULK_IN_ENDPOINT, s_currSendBuf, size);
 
             if (error != kStatus_USB_Success)
             {
                 /* Failure to send Data Handling code here */
             }
+        }
+        else if(_bUSBToTx){
+        	_bUSBToTx = false;
+        	error = USB_DeviceCdcAcmSend(s_cdcVcom.cdcAcmHandle, USB_CDC_VCOM_BULK_IN_ENDPOINT, NULL, 0);
+			if (error != kStatus_USB_Success)
+			{
+				/* Failure to send Data Handling code here */
+			}
         }
 #if defined(FSL_FEATURE_USB_KHCI_KEEP_ALIVE_ENABLED) && (FSL_FEATURE_USB_KHCI_KEEP_ALIVE_ENABLED > 0U) && \
     defined(USB_DEVICE_CONFIG_KEEP_ALIVE_MODE) && (USB_DEVICE_CONFIG_KEEP_ALIVE_MODE > 0U) &&             \
@@ -590,6 +622,7 @@ void APPTask(void)
             usb_echo("Exit  lowpower\r\n");
         }
 #endif
+
     }
 // from main loop
 #if USB_DEVICE_CONFIG_USE_TASK
@@ -597,3 +630,48 @@ void APPTask(void)
 #endif
 }
 
+//-----------------------------------------------------------------------------
+void VComTask()
+{
+	while(!cerb_IsEmpty(rRB_VC)) {
+		VComOnRx(cerb_Pop(rRB_VC));
+	}
+}
+//-----------------------------------------------------------------------------
+WEAK void VComOnRx(uint8_t ch)
+{
+// to do on rx
+}
+//-----------------------------------------------------------------------------
+uint8_t VComPutch(uint8_t c)
+{
+//  while(cerb_IsFull(tRB_VC));//wait when the buffer is full
+//	commenting above line means: Discard Policy=> discard old data
+	cerb_Push(tRB_VC,c);
+	return c;
+}
+//-----------------------------------------------------------------------------
+void VComPrint(char *s)
+{
+    for(;*s;s++) VComPutch(*s);
+}
+//-----------------------------------------------------------------------------
+void VComWrite(uint8_t *s,size_t n)
+{
+	size_t i;
+	for(i=0;i<n;i++){
+		VComPutch(s[i]);
+	}
+}
+//-----------------------------------------------------------------------------
+void VComPrintHex(uint8_t ch)
+{
+    uint8_t a;
+    a=(ch >> 4) | 0x30;
+    if(a>0x39) a+=7;
+    VComPutch(a);
+    a=(ch & 0x0F) | 0x30;
+    if(a>0x39) a+=7;
+    VComPutch(a);
+}
+//-----------------------------------------------------------------------------

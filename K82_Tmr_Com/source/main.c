@@ -1,6 +1,5 @@
 // Project: K82_Tmr_Com
 // Author: Yan Naing Aye
-// Last modified: 2021-06-30
 // Description: K82 software timer and com example
 
 #include "board.h"

@@ -21,7 +21,14 @@
 void BOARD_InitHardware(void);
 void BOARD_DbgConsole_Deinit(void);
 void BOARD_DbgConsole_Init(void);
-
+//-----------------------------------------------------------------------------
+void VComOnRx(uint8_t b)
+{
+	if( b >= '0' && b <= '8' ){
+		VComPutch(b+1);
+	}
+}
+//-----------------------------------------------------------------------------
 #if defined(__CC_ARM) || (defined(__ARMCC_VERSION)) || defined(__GNUC__)
 int main(void)
 #else

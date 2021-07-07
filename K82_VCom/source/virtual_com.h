@@ -18,6 +18,8 @@
 #include "fsl_debug_console.h"
 
 #include "usb_device_descriptor.h"
+
+#include "ceRingBuf.h"
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -89,5 +91,12 @@ typedef struct _usb_cdc_acm_info
 // Prototypes
 void APPTask(void);
 void APPInit(void);
+
+void VComTask();
+void VComOnRx(uint8_t b);
+uint8_t VComPutch(uint8_t c);
+void VComPrint(char *s);
+void VComWrite(uint8_t *s,size_t n);
+void VComPrintHex(uint8_t ch);
 
 #endif /* _USB_CDC_VCOM_H_ */
