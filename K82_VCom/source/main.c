@@ -3,6 +3,7 @@
  *
  *  Description: ring buffered vcom
  *      Author: yanna
+ *      Ref: http://cool-emerald.blogspot.com/2021/07/k82-usb-cdc-virtual-comm.html
  */
 
 
