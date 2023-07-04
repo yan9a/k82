@@ -15,6 +15,7 @@
 #include "board.h"
 
 #include "fsl_mmcau.h"
+#include "cau_api.h"
 
 #include "pin_mux.h"
 #include <stdbool.h>
@@ -786,6 +787,101 @@ static void mmcau_example_task(void)
     PRINTF(".............. THE  END  OF  THE  MMCAU  DRIVER  EXAMPLE ................................\r\n");
 }
 
+void TDES_Encrypt(unsigned char* buf,unsigned char* keyL,unsigned char*  keyR,unsigned char* out)
+{
+	cau_des_encrypt(buf,(unsigned char*)keyL,out);
+	cau_des_decrypt(out,(unsigned char*)keyR,buf);
+	cau_des_encrypt(buf,(unsigned char*)keyL,out);
+}
+
+void TDES_Decrypt(unsigned char* buf,unsigned char* keyL,unsigned char*  keyR,unsigned char* out)
+{
+	cau_des_decrypt(buf,(unsigned char*)keyL,out);
+	cau_des_encrypt(out,(unsigned char*)keyR,buf);
+	cau_des_decrypt(buf,(unsigned char*)keyL,out);
+}
+
+void MyDesEg(void)
+{
+	int i;
+	unsigned char buf[8];
+	unsigned char out[8];
+	const char* message = "12345678";
+	const char* keyL = "abcdefgh";
+	const char* keyR = "ijklmnop";
+	//-----------------------------------------------------
+	// DES Encryption
+	memcpy(buf, message, 8);
+	cau_des_encrypt(buf,(unsigned char*)keyL,out);
+	PRINTF("DES Encrypted message: ");
+	for(i=0;i<8;i++){
+		PRINTF("%02x",out[i]);
+	}
+	PRINTF("\n");
+	// result = 21C60DA534248BCE
+
+	//-----------------------------------------------------
+	// DES Decryption
+	memcpy(buf, out, 8);
+	cau_des_decrypt(buf,(unsigned char*)keyL,out);
+	PRINTF("DES Decrypted message: ");
+	for(i=0;i<8;i++){
+		PRINTF("%c",out[i]);
+	}
+	PRINTF("\n");
+
+	//-----------------------------------------------------
+	memcpy(buf, message, 8);
+	// 3DES Encryption
+	TDES_Encrypt(buf,(unsigned char*)keyL,(unsigned char*)keyR,out);
+	PRINTF("TDES Encrypted message: ");
+	for(i=0;i<8;i++){
+		PRINTF("%02x",out[i]);
+	}
+	PRINTF("\n");
+	// result = ba0c49533453e94f
+	//-----------------------------------------------------
+	memcpy(buf, out, 8);
+	// 3DES Decryption
+	TDES_Decrypt(buf,(unsigned char*)keyL,(unsigned char*)keyR,out);
+	PRINTF("TDES Decrypted message: ");
+	for(i=0;i<8;i++){
+		PRINTF("%c",out[i]);
+	}
+	PRINTF("\n");
+	//-----------------------------------------------------
+}
+
+void MySha1Eg()
+{
+	uint32_t sha1[SHA1_RESULT_LENGTH / sizeof(uint32_t)];
+	const char* message = "12345678";
+	unsigned char buf[CRYPTO_BLOCK_LENGTH];
+	uint32_t length = sizeof(message);
+	cau_sha1_initialize_output(sha1);
+
+	memcpy(buf, message, length);
+	buf[length]=0x80; // append a single 1 bit
+	memset(buf+length+1,0x00,CRYPTO_BLOCK_LENGTH-length-1);
+	cau_sha1_hash_n((unsigned char*)message, 1,sha1);
+
+	PRINTF("\r\nSHA1 \r\n");
+	for (int i = 0; i < SHA1_RESULT_LENGTH / sizeof(uint32_t); i++)
+	{
+		PRINTF("%08x", sha1[i]);
+	}
+	PRINTF("\r\n\r\n");
+
+	// Calculate next one
+	cau_sha1_initialize_output(sha1);
+	cau_sha1_hash_n((unsigned char*)g_testSha, 1,sha1);
+	PRINTF("\r\nSHA1 for g_testSha \r\n");
+	for (int i = 0; i < SHA1_RESULT_LENGTH / sizeof(uint32_t); i++)
+	{
+		PRINTF("%08x", sha1[i]);
+	}
+	PRINTF("\r\n\r\n");
+}
 /*!
  * @brief MMCAU example.
  */
@@ -807,6 +903,8 @@ int main(void)
         mmcau_example_task();
     }
 
+    MyDesEg();
+    MySha1Eg();
     while (1)
     {
     }
