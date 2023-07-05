@@ -56,3 +56,4 @@ Debug/
 *.launch
 .metadata/
 FreeRTOS_TAD_logs/
+.mcuxpresso_packages_support/
