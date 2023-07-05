@@ -57,6 +57,7 @@ void ceComPrint(uint32_t uartNo, char *s);
 void ceComWrite(uint32_t uartNo, uint8_t *s,size_t n);
 void ceComPrintHex(uint32_t uartNo, uint8_t ch);
 void ceComPrintHex32(uint32_t uartNo, uint32_t r);
+void ceComPrintDec32(uint32_t uartNo, uint32_t r);
 void ceComWUT(uint32_t uartNo);// wait until transmitted
 //-----------------------------------------------------------------------------
 #endif // CE_COM_H

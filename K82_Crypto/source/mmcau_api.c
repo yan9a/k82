@@ -850,6 +850,16 @@ void MyDesEg(void)
 	}
 	PRINTF("\n");
 	//-----------------------------------------------------
+	const char* keyParity = "CCCCCaaC";
+	int p = cau_des_chk_parity((const unsigned char *)keyParity);
+	if(!p){
+		PRINTF("Parity OK\n");
+	}
+	else {
+		PRINTF("Parity Error\n");
+	}
+	PRINTF("\n");
+	//-----------------------------------------------------
 }
 
 void MySha1Eg()

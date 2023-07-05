@@ -98,5 +98,7 @@ uint8_t VComPutch(uint8_t c);
 void VComPrint(char *s);
 void VComWrite(uint8_t *s,size_t n);
 void VComPrintHex(uint8_t ch);
+void VComPrintHex32(uint32_t r);
+void VComPrintDec32(uint32_t r);
 
 #endif /* _USB_CDC_VCOM_H_ */

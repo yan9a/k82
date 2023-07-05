@@ -675,3 +675,33 @@ void VComPrintHex(uint8_t ch)
     VComPutch(a);
 }
 //-----------------------------------------------------------------------------
+// Print 32 bit number in hex
+void VComPrintHex32(uint32_t r)
+{
+	int i;
+	uint8_t b[4];
+	for(i=0;i<4;i++){
+		b[i] = (uint8_t)( (r>>(i*8)) & 0xFF);
+	}
+	for(i=0;i<4;i++){
+		VComPrintHex(b[3-i]);
+	}
+}
+//-----------------------------------------------------------------------------
+// Print 32 bit number in decimal
+void VComPrintDec32(uint32_t r)
+{
+	int i,j;
+	uint8_t b[16];
+	// get at least 1 digit
+	i=0;
+	do{
+		b[i++]= (r % 10) | 0x30;
+		r /=10;
+	}while(r);
+	for(j=0;j<i;j++){
+		VComPutch(b[i-j-1]);
+	}
+}
+//-----------------------------------------------------------------------------
+

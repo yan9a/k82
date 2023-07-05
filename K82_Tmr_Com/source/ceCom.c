@@ -330,6 +330,22 @@ void ceComPrintHex32(uint32_t uartNo, uint32_t r)
 	}
 }
 //-----------------------------------------------------------------------------
+// Print 32 bit number in decimal
+void ceComPrintDec32(uint32_t uartNo, uint32_t r)
+{
+	int i,j;
+	uint8_t b[16];
+	// get at least 1 digit
+	i=0;
+	do{
+		b[i++]= (r % 10) | 0x30;
+		r /=10;
+	}while(r);
+	for(j=0;j<i;j++){
+		ceComPutch(uartNo,b[i-j-1]);
+	}
+}
+//-----------------------------------------------------------------------------
 void ceComWUT(uint32_t uartNo)
 {
 	while(!cerb_IsEmpty(tRB[uartNo])) ceComTaskTx(uartNo);
